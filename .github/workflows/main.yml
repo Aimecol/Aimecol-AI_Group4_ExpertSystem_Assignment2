@@ -1,91 +1,130 @@
-name: Web Build + Deployment to GitHub Pages 
+name: Crop Recommendation System CI/CD
 
 on:
-  # Runs on push to any of the below branches
   push:
-    branches: 
-      - master
-      - main
-  # Runs on pull request events that target one of the below branches
+    branches: [ main, development ]
   pull_request:
-    branches: 
-      - master
-      - main
+    branches: [ main ]
 
-  # Allows you to run this workflow manually from the Actions tab of the repository
-  workflow_dispatch:
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
-env:
-  # https://flet.dev/docs/publish#versioning
-  BUILD_NUMBER: 1
-  BUILD_VERSION: 1.0.0
-  PYTHON_VERSION: 3.12.2
-  FLUTTER_VERSION: 3.24.0
-  
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Python ${{ env.PYTHON_VERSION }}
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Install Python Dependencies
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      run: |
+        pytest --cov=./ --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-  
-    - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
+        pip install gunicorn
 
-    - name: Flet Build Web
+    - name: Deploy to Heroku
+      env:
+        HEROKU_API_TOKEN: ${{ secrets.HEROKU_API_TOKEN }}
+        HEROKU_APP_NAME: "crop-recommendation-system"
+      if: github.ref == 'refs/heads/main' && job.status == 'success'
       run: |
-            echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}, USER: ${GITHUB_REPOSITORY%/*}, PROJECT_BASE_URL: ${GITHUB_REPOSITORY#*/}"
-            flutter config --no-analytics
-            flet build web --base-url ${GITHUB_REPOSITORY#*/} --route-url-strategy hash
+        git remote add heroku https://heroku:$HEROKU_API_TOKEN@git.heroku.com/$HEROKU_APP_NAME.git
+        git push heroku main
 
-    - name: Upload Artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        name: web-build-artifact  # the name of the artifact
-        path: build/web
+    - name: Health check
+      run: |
+        curl --fail https://crop-recommendation-system.herokuapp.com/ || exit 1
 
-  deploy:
-    needs: build  # wait for the "build" job to get done before executing this "deploy" job
-
+  security:
+    needs: test
     runs-on: ubuntu-latest
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-      
+    
     steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        
-      - name: Deploy to GitHub Pages 🚀
-        if: github.event_name == 'push'  # deploy only on push
-        id: deployment
-        uses: actions/deploy-pages@v4.0.5
-        with:
-          artifact_name: web-build-artifact
-        
+    - uses: actions/checkout@v2
+    
+    - name: Security scan
+      uses: snyk/actions/python@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+  docker:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        tags: |
+          yourusername/crop-recommendation:latest
+          yourusername/crop-recommendation:${{ github.sha }}
+        cache-from: type=registry,ref=yourusername/crop-recommendation:buildcache
+        cache-to: type=registry,ref=yourusername/crop-recommendation:buildcache,mode=max
+
+env:
+  FLASK_APP: main.py
+  FLASK_ENV: production
+  PYTHONPATH: ${{ github.workspace }}
+
