@@ -1,160 +1,151 @@
 # Smart Crop Recommendation System
 
-A sophisticated web-based application that provides intelligent crop recommendations based on environmental conditions and soil characteristics.
+An intelligent agricultural expert system that provides data-driven crop recommendations based on environmental conditions, soil characteristics, and seasonal factors.
 
 ## Features
 
-- 🌱 Comprehensive crop database with 18+ crops
-- 🌡️ Environmental factor analysis (temperature, rainfall, humidity)
-- 🗺️ Soil type compatibility checking
-- 📊 Detailed nutrient requirement analysis
-- 🎯 Compatibility scoring system
-- 📅 Seasonal growing recommendations
-- 💻 Modern, responsive UI
-- 🔍 Real-time input validation
-- 🌐 RESTful API support
+- 🌱 SQLite-based crop database with detailed information
+- 🌍 Comprehensive soil type analysis and recommendations
+- 🌤️ Seasonal growing patterns integration
+- 🌡️ Environmental condition analysis:
+  - Temperature ranges
+  - Rainfall requirements
+  - Humidity levels
+  - pH levels
+- 🏗️ Advanced database architecture:
+  - Crops database
+  - Soil types database
+  - Seasons database
+- 📊 Sophisticated scoring algorithm
+- 💻 Modern, responsive interface
 
-## Technologies Used
+## Technical Stack
 
-- **Backend**: Python, Flask
-- **Frontend**: HTML5, CSS3
-- **Icons**: Font Awesome
-- **API**: JSON REST API
+- **Backend**: Python 3.x, Flask
+- **Database**: SQLite3
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Dependencies**: See requirements.txt
+- **Development**: Logging, Error Handling, Data Validation
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Aimecol/AI_Group4_ExpertSystem_Assignment2.git
 cd project-folder
 ```
 
-2. Create a virtual environment:
+2. Create and activate virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3. Install requirements:
+
 ```bash
-pip install flask
+pip install -r requirements.txt
 ```
 
-4. Run the application:
+4. Initialize the database:
+
+```bash
+python crop_database_setup.py
+```
+
+5. Run the application:
+
 ```bash
 python main.py
 ```
 
-The application will be available at `http://localhost:5000`
+The system will be available at `http://localhost:5000`
 
 ## Project Structure
 
 ```
 project-folder/
 │
-├── main.py              # Main Flask application
+├── main.py                 # Application entry point
+├── app_factory.py         # Flask app configuration
+├── models.py             # Database models
+├── crop_database_setup.py # Database initialization
+├── init_db.py
+│
 ├── static/
-│   └── style.css       # CSS styles
+│   └── style.css         # CSS styles
+│
 ├── templates/
-│   └── index.html      # HTML template
-└── README.md           # Documentation
+│   └── index.html        # Main template
+│
+├── crops.db              # SQLite database
+├── requirements.txt      # Project dependencies
+└── README.md            # Documentation
 ```
+
+## Database Schema
+
+### Crops Table
+
+- Temperature ranges
+- Rainfall requirements
+- pH levels
+- Humidity ranges
+- Soil type compatibility
+- Seasonal information
+- Nutrient requirements
+
+### Soil Types Table
+
+- Physical characteristics
+- Water retention
+- Nutrient content
+- Crop suitability
+- Management practices
+
+### Seasons Table
+
+- Growing periods
+- Weather patterns
+- Suitable crops
+- Farming activities
 
 ## Usage
 
-1. Open the application in your web browser
-2. Enter the following environmental parameters:
+1. Input environmental conditions:
    - Temperature (°C)
    - Rainfall (mm)
-   - Soil Type (Clay/Loam/Sandy)
-   - pH Level (optional)
-   - Humidity (optional)
-3. Click "Get Recommendations"
-4. View the recommended crops with their:
-   - Compatibility score
-   - Optimal growing conditions
-   - Required nutrients
-   - Suitable seasons
+   - Select soil type
+2. System will:
+   - Filter compatible crops
+   - Calculate matching scores
+   - Provide detailed recommendations
+   - Show growing tips
 
-## API Usage
+## Development
 
-The system provides a REST API endpoint for programmatic access:
-
-```bash
-POST /api/recommend
-Content-Type: application/json
-
-{
-    "temperature": 25,
-    "rainfall": 1000,
-    "soil_type": "loam",
-    "ph": 6.5,
-    "humidity": 70
-}
-```
-
-Response:
-```json
-{
-    "recommendations": {
-        "Rice": {
-            "score": 85,
-            "details": {
-                "optimal_temp": "20-35°C",
-                "optimal_rainfall": "1000-2000mm",
-                "suitable_soil": "clay, loam",
-                "growing_season": "Kharif",
-                "nutrients_needed": {
-                    "nitrogen": "high",
-                    "phosphorus": "medium",
-                    "potassium": "medium"
-                }
-            }
-        }
-    },
-    "current_season": "Kharif"
-}
-```
-
-## Supported Crops
-
-- Rice
-- Wheat
-- Maize
-- Cotton
-- Sugarcane
-- Potato
-- Tomato
-- Groundnut
-- Soybean
-- Mustard
-- Onion
-- Garlic
-- Peas
-- Sunflower
-- Jute
-- Chickpea
-- Turmeric
-- Black Pepper
+- Built with modular architecture
+- Implements SQLite for data persistence
+- Features comprehensive error handling
+- Includes detailed logging
+- Uses responsive design principles
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/YourFeature`)
+3. Commit changes (`git commit -m 'Add YourFeature'`)
+4. Push to branch (`git push origin feature/YourFeature`)
+5. Open Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file
 
 ## Acknowledgments
 
-- Agricultural data sourced from various agricultural research institutions
-- Weather data patterns from meteorological departments
-- Soil composition guidelines from soil science research
-
-## Support
-
-For support, please open an issue in the GitHub repository or contact the development team.
+- Agricultural data from research institutions
+- Soil science guidelines from agricultural departments
+- Weather pattern data from meteorological institutes

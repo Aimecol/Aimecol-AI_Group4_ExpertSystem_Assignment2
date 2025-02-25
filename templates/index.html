@@ -68,9 +68,11 @@
             </label>
             <select name="soil_type" required>
               <option value="" disabled selected>Select soil type</option>
-              <option value="clay">Clay</option>
-              <option value="loam">Loam</option>
-              <option value="sandy">Sandy</option>
+              {% for soil_type in soil_types %}
+              <option value="{{ soil_type }}" {% if conditions and conditions.soil_type == soil_type %}selected{% endif %}>
+                {{ soil_type|title }}
+              </option>
+              {% endfor %}
             </select>
           </div>
         </div>
@@ -84,8 +86,28 @@
       <div class="results-container">
         <h2>
           <i class="fas fa-list"></i> Recommended Crops
-          <span class="season-badge">{{ current_season }} Season</span>
+          <span class="season-badge">{{ current_season }}</span>
         </h2>
+
+        <!-- Debug information -->
+        {% if recommendations|length == 0 %}
+        <div class="alert alert-info">
+          No crops match your criteria. Try adjusting your parameters.
+        </div>
+        {% endif %}
+
+        <!-- Show current conditions -->
+        {% if conditions %}
+        <div class="conditions-summary">
+          <h3>Selected Conditions:</h3>
+          <ul>
+            <li>Temperature: {{ conditions.temperature }}°C</li>
+            <li>Rainfall: {{ conditions.rainfall }}mm</li>
+            <li>Soil Type: {{ conditions.soil_type|title }}</li>
+          </ul>
+        </div>
+        {% endif %}
+
         <div class="crop-grid">
           {% for crop, data in recommendations.items() %}
           <div class="crop-card" data-score="{{ data.score }}">
@@ -95,33 +117,38 @@
               <div class="compatibility-score">{{ data.score }}% Match</div>
             </div>
             <div class="crop-details">
-              <p>
-                <i class="fas fa-temperature-high"></i> Optimal: {{
-                data.details.optimal_temp }}
-              </p>
-              <p>
-                <i class="fas fa-cloud-rain"></i> Rainfall: {{
-                data.details.optimal_rainfall }}
-              </p>
-              <p>
-                <i class="fas fa-mountain"></i> Soil: {{
-                data.details.suitable_soil }}
-              </p>
-              <p>
-                <i class="fas fa-calendar"></i> Season: {{
-                data.details.growing_season }}
-              </p>
+              <div class="basic-info">
+                <p><i class="fas fa-temperature-high"></i> Optimal Temperature: {{ data.details.optimal_temp }}</p>
+                <p><i class="fas fa-cloud-rain"></i> Required Rainfall: {{ data.details.optimal_rainfall }}</p>
+                <p><i class="fas fa-mountain"></i> Suitable Soil Types: {{ data.details.suitable_soil }}</p>
+                <p><i class="fas fa-calendar"></i> Growing Seasons: {{ data.details.growing_season }}</p>
+              </div>
+
+              <div class="growing-conditions">
+                <p><i class="fas fa-tint"></i> Water Requirements: {{ data.details.water_needs }}</p>
+                <p><i class="fas fa-sun"></i> Sunlight Needs: {{ data.details.sunlight_needs }}</p>
+              </div>
+
+              <div class="description">
+                <h4>About this Crop:</h4>
+                <p>{{ data.details.description }}</p>
+              </div>
+
               <div class="nutrients">
                 <h4>Required Nutrients:</h4>
                 <ul>
-                  {% for nutrient, level in
-                  data.details.nutrients_needed.items() %}
+                  {% for nutrient, level in data.details.nutrients_needed.items() %}
                   <li>
-                    {{ nutrient }}:
-                    <span class="nutrient-level {{ level }}">{{ level }}</span>
+                    {{ nutrient|title }}: 
+                    <span class="nutrient-level {{ level }}">{{ level|title }}</span>
                   </li>
                   {% endfor %}
                 </ul>
+              </div>
+
+              <div class="farming-tips">
+                <h4>Farming Practices:</h4>
+                <p>{{ data.details.farming_practices }}</p>
               </div>
             </div>
           </div>
